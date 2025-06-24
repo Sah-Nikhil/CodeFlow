@@ -8,15 +8,19 @@ A local Windows application that generates flow diagrams from Python, C++, and T
 2. Open Command Prompt as Administrator
 3. Navigate to the project directory
 4. Install dependencies:
-`pip install -r requirements.txt`
+```shell
+pip install -r requirements.txt
+```
 
 ## Running the Application
 
 1. Open Command Prompt
 2. Navigate to the project directory
 3. Run:
+```shell
 python app.py
-4. Open your browser and go to: http://localhost:5000
+```
+5. Open your browser and go to: http://localhost:5000
 
 ## Usage
 
@@ -26,9 +30,9 @@ python app.py
 
 ## Supported File Types
 
-- Python: .py
-- C++: .cpp, .c, .cc, .cxx, .h, .hpp
-- TypeScript/JavaScript: .ts, .js, .tsx, .jsx
+- Python: `.py`
+- C++: `.cpp, .c, .cc, .cxx, .h, .hpp`
+- TypeScript/JavaScript: `.ts, .js, .tsx, .jsx`
 
 ## Features
 
