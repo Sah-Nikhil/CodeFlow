@@ -30,9 +30,9 @@ python app.py
 
 ## Supported File Types
 
-- Python: .py
-- C++: .cpp, .c, .cc, .cxx, .h, .hpp
-- TypeScript/JavaScript: .ts, .js, .tsx, .jsx
+- Python: `.py`
+- C++: `.cpp, .c, .cc, .cxx, .h, .hpp`
+- TypeScript/JavaScript: `.ts, .js, .tsx, .jsx`
 
 ## Features
 
