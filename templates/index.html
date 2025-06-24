@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Code Flow Diagram Generator</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <h1>Code Flow Diagram Generator</h1>
+
+        <div class="input-section">
+            <div class="tabs">
+                <button class="tab-button active" onclick="showTab('code-tab')">Code Input</button>
+                <button class="tab-button" onclick="showTab('file-tab')">File Upload</button>
+                <button class="tab-button" onclick="showTab('directory-tab')">Directory Analysis</button>
+            </div>
+
+            <div id="code-tab" class="tab-content active">
+                <h3>Paste Your Code</h3>
+                <textarea id="code-input" placeholder="Paste your Python, C++, or TypeScript code here..."></textarea>
+                <button onclick="analyzeCode()">Generate Flow Diagram</button>
+            </div>
+
+            <div id="file-tab" class="tab-content">
+                <h3>File Path</h3>
+                <input type="text" id="file-path" placeholder="Enter file path (e.g., C:\path\to\your\file.py)">
+                <button onclick="analyzeFile()">Analyze File</button>
+            </div>
+
+            <div id="directory-tab" class="tab-content">
+                <h3>Directory Path</h3>
+                <input type="text" id="directory-path" placeholder="Enter directory path (e.g., C:\path\to\your\project)">
+                <button onclick="analyzeDirectory()">Analyze Directory</button>
+            </div>
+        </div>
+
+        <div class="output-section">
+            <div class="diagram-container">
+                <h3>Flow Diagram</h3>
+                <div id="diagram-output"></div>
+            </div>
+
+            <div class="mermaid-container">
+                <h3>Mermaid Code</h3>
+                <textarea id="mermaid-output" readonly></textarea>
+                <button onclick="copyMermaidCode()">Copy Mermaid Code</button>
+            </div>
+        </div>
+
+        <div id="loading" class="loading hidden">
+            <div class="spinner"></div>
+            <p>Analyzing code...</p>
+        </div>
+
+        <div id="error-message" class="error hidden"></div>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
