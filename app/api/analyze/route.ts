@@ -1,8 +1,8 @@
 // app/api/analyze/route.ts
 import { NextResponse } from "next/server";
-import { ParsedData, Node, Edge } from "@/lib/parser/babel"; // Re-using interfaces
-import { parseBabelCode } from "@/lib/parser/babel";
-import { parsePythonCode } from "@/lib/parser/python";
+import { ParsedData, Node, Edge } from "@/lib/parsers/babel"; // Re-using interfaces
+import { parseBabelCode } from "@/lib/parsers/babel";
+import { parsePythonCode } from "@/lib/parsers/python";
 import { simpleGit } from "simple-git";
 import { globby } from "globby";
 import path from "path";
@@ -265,7 +265,10 @@ export async function POST(req: Request) {
               const relPath = path.relative(baseDir, fp);
               // Basic check: does the filename contain the component/function name?
               // This is a very rough heuristic.
-              return relPath.includes(edge.rawTarget) || relPath.toLowerCase().includes(edge.rawTarget.toLowerCase());
+              if (edge.rawTarget) {
+                return relPath.includes(edge.rawTarget) || relPath.toLowerCase().includes(edge.rawTarget.toLowerCase());
+              }
+              return false;
             });
 
             if (potentialFileNode) {
