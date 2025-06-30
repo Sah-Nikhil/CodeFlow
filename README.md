@@ -1,36 +1,52 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CodeFlow: Source Code Graph Visualizer
 
-## Getting Started
+CodeFlow is a Next.js application that visualizes the structure and relationships within a codebase as an interactive graph. It helps developers understand code organization, dependencies, and flow by representing files, functions, classes, components, and more as nodes and edges.
 
-First, run the development server:
+## Features
+- Visualizes code structure as a graph (files, functions, classes, components, etc.)
+- Interactive node selection with code preview (pending)
+- Supports multiple node types with color-coded visualization
+- Modern UI with dark/light mode support (pending)
+- Multi Language support (JS/TS & Python for now)
+## Project Structure
+- `app/` — Next.js app directory (pages, API routes, global styles)
+- `components/` — React components for UI and graph rendering
+- `lib/parsers/` — Code parsers for different languages (e.g., Babel for JS, Python parser)
+- `public/` — Static assets (SVGs, images)
+- `README.md` — Project documentation
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## Usage
+1. Install dependencies:
+   ```bash
+   pnpm install
+   # or
+   npm install
+   # or
+   yarn install
+   ```
+2. Start the development server:
+   ```bash
+   pnpm dev
+   # or
+   npm run dev
+   # or
+   yarn dev
+   ```
+3. Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Node Types & Color Reference
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| **Node Type** | **Hex Color** | **Closest Named Color**      | **Description**                                     |
+| ------------- | ------------- | ---------------------------- | --------------------------------------------------- |
+| `file`        | `#69b3a2`     | Green Blue / Sea Green       | Represents a source code file                       |
+| `function`    | `#4285F4`     | Google Blue / Vivid Blue     | Represents a function definition                    |
+| `class`       | `#DB4437`     | Google Red / Strong Red      | Represents a class definition                       |
+| `component`   | `#F4B400`     | Google Yellow / Vivid Yellow | Likely a React or UI component                      |
+| `export`      | `#0F9D58`     | Jungle Green / Rich Green    | Represents an exported symbol or entity             |
+| `import`      | `#9e5fba`     | Amethyst / Medium Purple     | Represents an import statement or module            |
+| *(default)*   | `#cccccc`     | Light Gray                   | Fallback/default for unknown or uncategorized types |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Contributing
+Pull requests and issues are welcome! Please open an issue to discuss major changes.
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## License

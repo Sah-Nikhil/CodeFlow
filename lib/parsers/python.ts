@@ -37,7 +37,7 @@ export const parsePythonCode = (
 
       nodes.push({
         id: functionId,
-        data: { label: functionName, type: "function", filePath: filePath },
+        data: { label: functionName, type: "function", filePath },
       });
       edges.push({
         id: `${filePath}-defines-func-${functionId}`,
@@ -59,7 +59,7 @@ export const parsePythonCode = (
 
       nodes.push({
         id: classId,
-        data: { label: className, type: "class", filePath: filePath },
+        data: { label: className, type: "class", filePath },
       });
       edges.push({
         id: `${filePath}-defines-class-${classId}`,
@@ -83,7 +83,7 @@ export const parsePythonCode = (
 
     let importMatch;
     while ((importMatch = importRegex.exec(code)) !== null) {
-      const fullImportPath = importMatch[1] || importMatch[2]; // Captures full module path
+      const fullImportPath = importMatch[1] || importMatch[2];
 
       if (fullImportPath) {
         // Python relative imports start with '.' or '..'
@@ -91,9 +91,9 @@ export const parsePythonCode = (
         // We will store the raw target and resolve in API handler.
         const importEdgeId = `${filePath}-imports-${fullImportPath}-${importMatch.index}`;
         edges.push({
-          id: importEdgeId,
+          id: `${filePath}-imports-${fullImportPath}-${importMatch.index}`,
           source: filePath,
-          target: fullImportPath, // This target needs resolution in the API handler
+          target: fullImportPath,
           type: "imports",
           label: "imports",
           rawTarget: fullImportPath,
@@ -101,52 +101,7 @@ export const parsePythonCode = (
       }
     }
 
-    // 4. Simple Function/Method Calls (using regex)
-    // This is a heuristic approach, looking for `word(`.
-    // Will capture function calls and method calls.
-    const callRegex = /\b([a-zA-Z_][a-zA-Z0-9_]*)\s*\(/g;
-    let callMatch;
-    const detectedCalls = new Set<string>(); // To avoid duplicate edges for same call within a file
-    while ((callMatch = callRegex.exec(code)) !== null) {
-      const calleeName = callMatch[1];
-
-      // Exclude common keywords or built-ins that are not actual calls
-      if (
-        ![
-          "if",
-          "for",
-          "while",
-          "with",
-          "def",
-          "class",
-          "return",
-          "yield",
-          "raise",
-          "try",
-          "except",
-          "finally",
-          "print", // Python 2 style print statements
-          "del",
-          "assert",
-          "pass",
-          "async",
-          "await",
-        ].includes(calleeName)
-      ) {
-        const callEdgeId = `${filePath}-calls-${calleeName}-${callMatch.index}`;
-        if (!detectedCalls.has(callEdgeId)) {
-          edges.push({
-            id: callEdgeId,
-            source: filePath,
-            target: calleeName, // Raw name, needs resolution
-            type: "calls",
-            label: "calls",
-            rawTarget: calleeName,
-          });
-          detectedCalls.add(callEdgeId);
-        }
-      }
-    }
+    // ✅ Function call parsing has been **removed**
   } catch (error) {
     console.error(`Error parsing Python file ${filePath}:`, error);
     // Log the error but allow other files to be processed.
