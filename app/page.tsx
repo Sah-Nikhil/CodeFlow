@@ -4,7 +4,9 @@
 import React, { useState, useRef } from "react";
 import Graph from "@/components/Graph";
 import DirectoryTree, { DirectoryNode } from "@/components/DirectoryTree";
-import { ParsedData, Node } from "@/lib/parsers/babel"; // Re-use interfaces
+import { ParsedData, Node } from "@/lib/parsers/babel";
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 const HomePage: React.FC = () => {
   const [inputPath, setInputPath] = useState<string>("");
@@ -13,8 +15,10 @@ const HomePage: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [codePreview, setCodePreview] = useState<string | null>(null);
+  const [repoUrl, setRepoUrl] = useState<string>("");
 
   const graphContainerRef = useRef<HTMLDivElement>(null);
+  const graphRef = useRef<{ focusNode: (nodeId: string) => void }>(null);
   const [graphDimensions, setGraphDimensions] = useState({ width: 0, height: 0 });
 
   // Update graph dimensions on window resize and initial load
@@ -39,6 +43,7 @@ const HomePage: React.FC = () => {
     setGraphData(null); // Clear previous graph
     setSelectedNode(null); // Clear selected node
     setCodePreview(null); // Clear code preview
+    setRepoUrl("");
 
     try {
       const response = await fetch("/api/analyze", {
@@ -56,6 +61,10 @@ const HomePage: React.FC = () => {
 
       const data: ParsedData = await response.json();
       setGraphData(data);
+      // If inputPath is a GitHub URL, store it for file preview
+      if (inputPath.startsWith("http://") || inputPath.startsWith("https://")) {
+        setRepoUrl(inputPath);
+      }
     } catch (err: any) {
       console.error("API Call Error:", err);
       setError(err.message || "An unknown error occurred during analysis.");
@@ -71,25 +80,21 @@ const HomePage: React.FC = () => {
     // If it's a file node, fetch its content for preview
     if (node.data.type === "file" || node.data.filePath) {
       try {
-        // This is a simplified approach. In a real scenario, you'd need
-        // to pass the original inputPath (repo URL or local baseDir) to
-        // another API route to securely fetch the file content.
-        // For demonstration, we'll simulate fetching or show a dummy.
-        // As the backend already processed the files, we could have it store
-        // or return content for selected files. For now, a placeholder.
-
-        // Simulating a delay and success
-        await new Promise(resolve => setTimeout(resolve, 500));
-        // In a real app, you'd have an API endpoint like /api/file-content?path=node.id
-        // const fileContentResponse = await fetch(`/api/file-content?path=${encodeURIComponent(node.id)}`);
-        // const content = await fileContentResponse.text();
-        const dummyContent = `// Code preview for ${node.id}\n\n` +
-                             `console.log("This is a dummy code snippet.");\n` +
-                             `function someFunc() {\n  // Real code content would go here\n}\n` +
-                             `/* This content is not fetched from the actual file due to security/complexity. */\n` +
-                             `/* Implement a dedicated file content API to make this work for real. */`;
-
-        setCodePreview(dummyContent);
+        // Try to fetch the real file content from the API
+        const res = await fetch("/api/file-content", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            filePath: node.data.label.replace(/\\/g, "/"),
+            repoUrl: repoUrl || undefined,
+          }),
+        });
+        if (!res.ok) {
+          const errData = await res.json();
+          throw new Error(errData.error || "Failed to fetch file content");
+        }
+        const data = await res.json();
+        setCodePreview(data.content);
       } catch (err) {
         console.error("Error fetching code preview:", err);
         setCodePreview(`Could not load code preview for ${node.id}.`);
@@ -166,8 +171,34 @@ const HomePage: React.FC = () => {
     }
   };
 
+  // Utility: Guess language from file extension
+  function getLanguageFromFilename(filename: string): string {
+    const ext = filename.split(".").pop()?.toLowerCase();
+    switch (ext) {
+      case "js": return "javascript";
+      case "ts": return "typescript";
+      case "tsx": return "tsx";
+      case "jsx": return "jsx";
+      case "py": return "python";
+      case "java": return "java";
+      case "c": return "c";
+      case "cpp": return "cpp";
+      case "cs": return "csharp";
+      case "json": return "json";
+      case "css": return "css";
+      case "html": return "html";
+      case "md": return "markdown";
+      case "go": return "go";
+      case "rb": return "ruby";
+      case "php": return "php";
+      case "sh": return "bash";
+      case "yml": case "yaml": return "yaml";
+      default: return "text";
+    }
+  }
+
   return (
-    <div className="min-h-screen flex flex-col items-center p-8 bg-gray-100 text-gray-800">
+    <div className="min-h-screen flex flex-col items-center p-6 bg-gray-100 text-gray-800">
       <h1 className="text-3xl font-bold mb-6">Codebase Visualizer</h1>
 
       <form
@@ -215,28 +246,39 @@ const HomePage: React.FC = () => {
           <div ref={graphContainerRef} className="flex-grow h-full relative">
             {graphDimensions.width > 0 && graphDimensions.height > 0 && (
               <Graph
+                ref={graphRef}
                 graphData={graphData}
                 width={graphDimensions.width}
                 height={graphDimensions.height}
                 onNodeClick={handleNodeClick}
               />
             )}
-            <div className="absolute top-4 left-4 text-sm bg-gray-700 text-white p-2 rounded-md bg-opacity-70">
+            <div className="absolute top-4 left-4 text-sm bg-neutral-700 text-white p-2 rounded-md bg-opacity-70">
               Nodes: {graphData.nodes.length}, Edges: {graphData.edges.length}
             </div>
             <button
               onClick={exportGraphAsSvg}
-              className="absolute bottom-4 left-4 p-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 text-sm"
+              className="absolute bottom-4 left-4 p-2 bg-neutral-600 text-neutral-50 rounded-md hover:bg-neutral-800 text-sm"
             >
               Export as SVG
             </button>
           </div>
           {/* Directory Tree Pane */}
           <div className="w-80 h-full border-l border-gray-200 bg-gray-50 overflow-auto">
-            <h3 className="text-lg font-semibold p-4 border-b border-gray-200">Directory Structure</h3>
+            <h3 className="fixed-top text-lg font-semibold p-4 border-b border-gray-200">Directory Structure</h3>
             <DirectoryTree tree={directoryTree} onFileClick={(filePath) => {
               const node = fileNodes?.find((n: Node) => n.data.label.replace(/\\/g, "/") === filePath);
-              if (node) handleNodeClick(node);
+              console.log('[DirectoryTree] Clicked filePath:', filePath);
+              if (node) {
+                console.log('[DirectoryTree] Found node for filePath:', node.id, node);
+                handleNodeClick(node);
+                // Focus/zoom to node in graph
+                setTimeout(() => {
+                  graphRef.current?.focusNode(node.id);
+                }, 200); // Small delay to ensure graph is ready
+              } else {
+                console.warn('[DirectoryTree] No node found for filePath:', filePath, 'Available file node labels:', fileNodes?.map(n => n.data.label));
+              }
             }} />
           </div>
         </div>
@@ -249,13 +291,19 @@ const HomePage: React.FC = () => {
       )}
 
       {selectedNode && codePreview && (
-        <div className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md mt-8">
+        <div className="justify-start w-full max-w-4xl bg-neutral-50 p-6 rounded-lg shadow-md mt-8">
           <h3 className="text-xl font-semibold mb-4">Code Preview for {selectedNode.data.label}</h3>
-          <pre className="whitespace-pre-wrap break-words text-sm">
+          <SyntaxHighlighter
+            language={getLanguageFromFilename(selectedNode.data.label)}
+            style={oneDark}
+            customStyle={{ borderRadius: 8, fontSize: 14, padding: 16 }}
+            showLineNumbers
+          >
             {codePreview}
-          </pre>
+          </SyntaxHighlighter>
         </div>
       )}
+
     </div>
   );
 };

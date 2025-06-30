@@ -6,7 +6,6 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { Button } from "@/components/ui/button";
-import { ScrollArea } from "@/components/ui/scroll-area";
 
 export interface DirectoryNode {
   name: string;
@@ -53,7 +52,7 @@ const DirectoryTree: React.FC<DirectoryTreeProps> = ({ tree, onFileClick }) => {
   );
 
   return (
-    <ScrollArea className="h-full w-full py-2">{renderTree(tree)}</ScrollArea>
+    <div className="h-fill w-fit py-2">{renderTree(tree)}</div>
   );
 };
 
