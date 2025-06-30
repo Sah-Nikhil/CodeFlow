@@ -99,28 +99,28 @@ const HomePage: React.FC = () => {
   };
 
   // Sample graph data as requested for quick testing
-  const sampleGraphData: ParsedData = {
-    nodes: [
-      { id: "App.tsx", data: { label: "App.tsx", type: "file" } },
-      { id: "Hero.tsx", data: { label: "Hero.tsx", type: "file" } },
-      { id: "Button.tsx", data: { label: "Button.tsx", type: "file" } },
-      { id: "App.tsx#Hero", data: { label: "Hero", type: "component", filePath: "App.tsx" } },
-      { id: "Hero.tsx#Button", data: { label: "Button", type: "component", filePath: "Hero.tsx" } },
-      { id: "utils.ts", data: { label: "utils.ts", type: "file" } },
-      { id: "utils.ts#helperFunc", data: { label: "helperFunc", type: "function", filePath: "utils.ts" } },
-      { id: "App.tsx#render", data: { label: "render", type: "function", filePath: "App.tsx" } },
-    ],
-    edges: [
-      { id: "e1", source: "App.tsx", target: "Hero.tsx", type: "imports", label: "imports" },
-      { id: "e2", source: "App.tsx", target: "App.tsx#Hero", type: "renders", label: "renders" },
-      { id: "e3", source: "Hero.tsx", target: "Button.tsx", type: "imports", label: "imports" },
-      { id: "e4", source: "Hero.tsx", target: "Hero.tsx#Button", type: "renders", label: "renders" },
-      { id: "e5", source: "App.tsx", target: "utils.ts", type: "imports", label: "imports" },
-      { id: "e6", source: "App.tsx#render", target: "utils.ts#helperFunc", type: "calls", label: "calls" },
-      { id: "e7", source: "App.tsx", target: "App.tsx#render", type: "defines", label: "defines" },
-      { id: "e8", source: "utils.ts", target: "utils.ts#helperFunc", type: "defines", label: "defines" },
-    ],
-  };
+//   const sampleGraphData: ParsedData = {
+//     nodes: [
+//       { id: "App.tsx", data: { label: "App.tsx", type: "file" } },
+//       { id: "Hero.tsx", data: { label: "Hero.tsx", type: "file" } },
+//       { id: "Button.tsx", data: { label: "Button.tsx", type: "file" } },
+//       { id: "App.tsx#Hero", data: { label: "Hero", type: "component", filePath: "App.tsx" } },
+//       { id: "Hero.tsx#Button", data: { label: "Button", type: "component", filePath: "Hero.tsx" } },
+//       { id: "utils.ts", data: { label: "utils.ts", type: "file" } },
+//       { id: "utils.ts#helperFunc", data: { label: "helperFunc", type: "function", filePath: "utils.ts" } },
+//       { id: "App.tsx#render", data: { label: "render", type: "function", filePath: "App.tsx" } },
+//     ],
+//     edges: [
+//       { id: "e1", source: "App.tsx", target: "Hero.tsx", type: "imports", label: "imports" },
+//       { id: "e2", source: "App.tsx", target: "App.tsx#Hero", type: "renders", label: "renders" },
+//       { id: "e3", source: "Hero.tsx", target: "Button.tsx", type: "imports", label: "imports" },
+//       { id: "e4", source: "Hero.tsx", target: "Hero.tsx#Button", type: "renders", label: "renders" },
+//       { id: "e5", source: "App.tsx", target: "utils.ts", type: "imports", label: "imports" },
+//       { id: "e6", source: "App.tsx#render", target: "utils.ts#helperFunc", type: "calls", label: "calls" },
+//       { id: "e7", source: "App.tsx", target: "App.tsx#render", type: "defines", label: "defines" },
+//       { id: "e8", source: "utils.ts", target: "utils.ts#helperFunc", type: "defines", label: "defines" },
+//     ],
+//   };
 
 
   // Export graph as SVG
@@ -196,7 +196,7 @@ const HomePage: React.FC = () => {
       )}
 
       {graphData && graphData.nodes.length > 0 ? (
-        <div className="w-full max-w-6xl h-[650px] bg-white rounded-lg shadow-md overflow-hidden flex">
+        <div className="w-full max-w-7xl h-[850px] bg-white rounded-lg shadow-md overflow-hidden flex">
           {/* Graph Area */}
           <div ref={graphContainerRef} className="flex-grow h-full relative">
             {graphDimensions.width > 0 && graphDimensions.height > 0 && (
@@ -252,7 +252,7 @@ const HomePage: React.FC = () => {
       ) : null}
 
       {!graphData && !loading && !error && (
-        <div className="w-full max-w-4xl h-[600px] bg-white rounded-lg shadow-md overflow-hidden flex items-center justify-center">
+        <div className="w-full max-w-6xl h-[800px] bg-white rounded-lg shadow-md overflow-hidden flex items-center justify-center">
           <p className="text-gray-500 text-lg">
             Enter a GitHub repository URL or local folder path to visualize the
             codebase.
@@ -261,12 +261,12 @@ const HomePage: React.FC = () => {
       )}
 
       {/* Static Sample Graph Section */}
-      <h2 className="text-2xl font-bold mt-10 mb-4">
+      {/* <h2 className="text-2xl font-bold mt-10 mb-4">
         Sample Graph (for structure testing)
       </h2>
       <div className="w-full max-w-4xl h-[400px] bg-white rounded-lg shadow-md overflow-hidden">
         <Graph graphData={sampleGraphData} width={800} height={400} />
-      </div>
+      </div> */}
     </div>
   );
 };

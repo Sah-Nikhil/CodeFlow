@@ -1,9 +1,9 @@
-// components/Graph.tsx (full updated version for debugging)
+// components/Graph.tsx (full updated version with zoom/pan)
 "use client";
 
 import React, { useRef, useEffect, useCallback } from "react";
 import * as d3 from "d3";
-import { Node, Edge } from "@/lib/parser/babel";
+import { Node, Edge } from "@/lib/parsers/babel";
 
 interface GraphProps {
   graphData: {
@@ -28,6 +28,8 @@ const Graph: React.FC<GraphProps> = ({
   // Removed gRef for now to simplify debugging
 
   const simulationRef = useRef<d3.Simulation<D3Node, D3Edge>>();
+  // Store the current zoom transform
+  const zoomTransformRef = useRef<d3.ZoomTransform | null>(null);
 
   const dragstarted = useCallback(
     (event: d3.D3DragEvent<any, D3Node, any>) => {
@@ -40,6 +42,7 @@ const Graph: React.FC<GraphProps> = ({
   );
 
   const dragged = useCallback((event: d3.D3DragEvent<any, D3Node, any>) => {
+    // Use event.x and event.y directly for dragging (they are in the correct zoomed coordinates)
     event.subject.fx = event.x;
     event.subject.fy = event.y;
   }, []);
@@ -63,16 +66,27 @@ const Graph: React.FC<GraphProps> = ({
     }
 
     const svg = d3.select(svgRef.current);
-    svg.selectAll("*").remove(); // Clear all previous SVG content on each render for simplicity in debug
+    svg.selectAll("*").remove();
+
+    // --- Add Zoom/Pan Support ---
+    const zoomGroup = svg.append("g").attr("class", "zoom-group");
+    svg.call(
+      d3.zoom<SVGSVGElement, unknown>()
+        .scaleExtent([0.2, 4])
+        .on("zoom", (event) => {
+          zoomGroup.attr("transform", event.transform);
+          zoomTransformRef.current = event.transform;
+        })
+    );
 
     // Ensure data is mapped correctly for D3
     const nodesData: D3Node[] = graphData.nodes.map((node) => ({
       ...node,
       // D3 will initialize x/y if undefined. We don't want to fix them at (0,0) here.
-      x: node.x || undefined,
-      y: node.y || undefined,
-      vx: node.vx || 0,
-      vy: node.vy || 0,
+      x: (node as any).x ?? undefined,
+      y: (node as any).y ?? undefined,
+      vx: (node as any).vx ?? 0,
+      vy: (node as any).vy ?? 0,
     }));
     const edgesData: D3Edge[] = graphData.edges.map((edge) => ({
       ...edge,
@@ -109,7 +123,7 @@ const Graph: React.FC<GraphProps> = ({
 
     // --- Create SVG Elements ---
     // Ensure defs and marker are recreated each time with selectAll("*").remove()
-    svg
+    zoomGroup
       .append("defs")
       .append("marker")
       .attr("id", "arrowhead")
@@ -125,21 +139,21 @@ const Graph: React.FC<GraphProps> = ({
       .attr("fill", "#999")
       .style("stroke", "none");
 
-    const link = svg
+    const link = zoomGroup
       .append("g")
       .attr("stroke", "#999")
       .attr("stroke-opacity", 0.6)
-      .selectAll("line")
-      .data(edgesData, (d: D3Edge) => d.id)
+      .selectAll<SVGLineElement, D3Edge>("line")
+      .data(edgesData, (d) => d.id)
       .join("line")
       .attr("stroke-width", 1)
       .attr("marker-end", "url(#arrowhead)");
 
-    const nodeGroup = svg
+    const nodeGroup = zoomGroup
       .append("g")
       .attr("class", "nodes")
-      .selectAll("g")
-      .data(nodesData, (d: D3Node) => d.id)
+      .selectAll<SVGGElement, D3Node>("g")
+      .data(nodesData, (d) => d.id)
       .join("g")
       .call(
         d3
@@ -185,6 +199,7 @@ const Graph: React.FC<GraphProps> = ({
 
     // --- Tick Function (updates positions) ---
     function ticked() {
+        // Remove clamping: allow nodes to move freely (zoom/pan will keep them visible)
         link
             .attr("x1", (d: any) => d.source.x)
             .attr("y1", (d: any) => d.source.y)
