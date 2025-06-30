@@ -3,7 +3,8 @@
 
 import React, { useState, useRef } from "react";
 import Graph from "@/components/Graph";
-import { ParsedData, Node } from "@/lib/parser/babel"; // Re-use interfaces
+import DirectoryTree, { DirectoryNode } from "@/components/DirectoryTree";
+import { ParsedData, Node } from "@/lib/parsers/babel"; // Re-use interfaces
 
 const HomePage: React.FC = () => {
   const [inputPath, setInputPath] = useState<string>("");
@@ -98,29 +99,42 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // Sample graph data as requested for quick testing
-//   const sampleGraphData: ParsedData = {
-//     nodes: [
-//       { id: "App.tsx", data: { label: "App.tsx", type: "file" } },
-//       { id: "Hero.tsx", data: { label: "Hero.tsx", type: "file" } },
-//       { id: "Button.tsx", data: { label: "Button.tsx", type: "file" } },
-//       { id: "App.tsx#Hero", data: { label: "Hero", type: "component", filePath: "App.tsx" } },
-//       { id: "Hero.tsx#Button", data: { label: "Button", type: "component", filePath: "Hero.tsx" } },
-//       { id: "utils.ts", data: { label: "utils.ts", type: "file" } },
-//       { id: "utils.ts#helperFunc", data: { label: "helperFunc", type: "function", filePath: "utils.ts" } },
-//       { id: "App.tsx#render", data: { label: "render", type: "function", filePath: "App.tsx" } },
-//     ],
-//     edges: [
-//       { id: "e1", source: "App.tsx", target: "Hero.tsx", type: "imports", label: "imports" },
-//       { id: "e2", source: "App.tsx", target: "App.tsx#Hero", type: "renders", label: "renders" },
-//       { id: "e3", source: "Hero.tsx", target: "Button.tsx", type: "imports", label: "imports" },
-//       { id: "e4", source: "Hero.tsx", target: "Hero.tsx#Button", type: "renders", label: "renders" },
-//       { id: "e5", source: "App.tsx", target: "utils.ts", type: "imports", label: "imports" },
-//       { id: "e6", source: "App.tsx#render", target: "utils.ts#helperFunc", type: "calls", label: "calls" },
-//       { id: "e7", source: "App.tsx", target: "App.tsx#render", type: "defines", label: "defines" },
-//       { id: "e8", source: "utils.ts", target: "utils.ts#helperFunc", type: "defines", label: "defines" },
-//     ],
-//   };
+  // Utility: Convert flat file list to directory tree
+  function buildDirectoryTree(files: string[]): DirectoryNode[] {
+    const root: { [key: string]: DirectoryNode } = {};
+    for (const file of files) {
+      const parts = file.split("/");
+      let current = root;
+      let path = "";
+      for (let i = 0; i < parts.length; i++) {
+        const part = parts[i];
+        path = path ? path + "/" + part : part;
+        if (!current[part]) {
+          current[part] = {
+            name: part,
+            path,
+            ...(i < parts.length - 1 ? { children: {} } : {}),
+          } as DirectoryNode;
+        }
+        if (i < parts.length - 1) {
+          current = current[part].children as any;
+        }
+      }
+    }
+    // Recursively convert children objects to arrays
+    function toArray(obj: any): DirectoryNode[] {
+      return Object.values(obj).map((node: any) =>
+        node.children ? { ...node, children: toArray(node.children) } : node
+      );
+    }
+    return toArray(root);
+  }
+
+  // Extract file nodes from graphData
+  const fileNodes = graphData?.nodes.filter((n: Node) => n.data.type === "file");
+  // Normalize file paths to use forward slashes for directory tree
+  const filePaths = fileNodes?.map((n: Node) => n.data.label.replace(/\\/g, "/")) || [];
+  const directoryTree = buildDirectoryTree(filePaths);
 
 
   // Export graph as SVG
@@ -217,56 +231,31 @@ const HomePage: React.FC = () => {
               Export as SVG
             </button>
           </div>
-
-          {/* Code Preview Panel */}
-          {selectedNode && (
-            <div className="w-96 bg-gray-800 text-white p-4 overflow-auto border-l border-gray-700 flex flex-col">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-xl font-semibold">
-                  Preview: {selectedNode.data.label}
-                </h3>
-                <button
-                  onClick={() => {
-                    setSelectedNode(null);
-                    setCodePreview(null);
-                  }}
-                  className="text-gray-400 hover:text-white"
-                >
-                  &times;
-                </button>
-              </div>
-              <p className="text-sm text-gray-400 mb-2">
-                Type: {selectedNode.data.type}{" "}
-                {selectedNode.data.filePath && `(${selectedNode.data.filePath})`}
-              </p>
-              <div className="flex-grow bg-gray-900 p-3 rounded-md font-mono text-sm overflow-auto">
-                <pre className="whitespace-pre-wrap break-all">{codePreview || "Select a node to see its code."}</pre>
-              </div>
-            </div>
-          )}
+          {/* Directory Tree Pane */}
+          <div className="w-80 h-full border-l border-gray-200 bg-gray-50 overflow-auto">
+            <h3 className="text-lg font-semibold p-4 border-b border-gray-200">Directory Structure</h3>
+            <DirectoryTree tree={directoryTree} onFileClick={(filePath) => {
+              const node = fileNodes?.find((n: Node) => n.data.label.replace(/\\/g, "/") === filePath);
+              if (node) handleNodeClick(node);
+            }} />
+          </div>
         </div>
-      ) : graphData && graphData.nodes.length === 0 && !loading && !error ? (
-        <p className="text-gray-600 text-lg">
-          No graph data generated. Try a different path or repository.
-        </p>
-      ) : null}
-
-      {!graphData && !loading && !error && (
-        <div className="w-full max-w-6xl h-[800px] bg-white rounded-lg shadow-md overflow-hidden flex items-center justify-center">
+      ) : (
+        graphData && (
           <p className="text-gray-500 text-lg">
-            Enter a GitHub repository URL or local folder path to visualize the
-            codebase.
+            No nodes found in the graph data. Please check the input path and try again.
           </p>
-        </div>
+        )
       )}
 
-      {/* Static Sample Graph Section */}
-      {/* <h2 className="text-2xl font-bold mt-10 mb-4">
-        Sample Graph (for structure testing)
-      </h2>
-      <div className="w-full max-w-4xl h-[400px] bg-white rounded-lg shadow-md overflow-hidden">
-        <Graph graphData={sampleGraphData} width={800} height={400} />
-      </div> */}
+      {selectedNode && codePreview && (
+        <div className="w-full max-w-2xl bg-white p-6 rounded-lg shadow-md mt-8">
+          <h3 className="text-xl font-semibold mb-4">Code Preview for {selectedNode.data.label}</h3>
+          <pre className="whitespace-pre-wrap break-words text-sm">
+            {codePreview}
+          </pre>
+        </div>
+      )}
     </div>
   );
 };
