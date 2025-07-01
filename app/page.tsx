@@ -7,6 +7,7 @@ import DirectoryTree, { DirectoryNode } from "@/components/DirectoryTree";
 import { ParsedData, Node } from "@/lib/parsers/babel";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import CodeSummary from "@/components/CodeSummary";
 
 const HomePage: React.FC = () => {
   const [inputPath, setInputPath] = useState<string>("");
@@ -16,6 +17,8 @@ const HomePage: React.FC = () => {
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [codePreview, setCodePreview] = useState<string | null>(null);
   const [repoUrl, setRepoUrl] = useState<string>("");
+  const [summary, setSummary] = useState<string | null>(null);
+  const [summaryLoading, setSummaryLoading] = useState<boolean>(false);
 
   const graphContainerRef = useRef<HTMLDivElement>(null);
   const graphRef = useRef<{ focusNode: (nodeId: string) => void }>(null);
@@ -75,7 +78,9 @@ const HomePage: React.FC = () => {
 
   const handleNodeClick = async (node: Node) => {
     setSelectedNode(node);
-    setCodePreview("Loading code preview..."); // Placeholder for loading
+    setCodePreview("Loading code preview...");
+    setSummary(null);
+    setSummaryLoading(false);
 
     // If it's a file node, fetch its content for preview
     if (node.data.type === "file" || node.data.filePath) {
@@ -95,12 +100,30 @@ const HomePage: React.FC = () => {
         }
         const data = await res.json();
         setCodePreview(data.content);
+
+        // Fetch summary
+        setSummaryLoading(true);
+        const summaryRes = await fetch("/api/summarize", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: data.content, filename: node.data.label }),
+        });
+        if (!summaryRes.ok) {
+          const errData = await summaryRes.json();
+          throw new Error(errData.error || "Failed to fetch summary");
+        }
+        const summaryData = await summaryRes.json();
+        setSummary(summaryData.summary);
       } catch (err) {
-        console.error("Error fetching code preview:", err);
+        console.error("Error fetching code preview or summary:", err);
         setCodePreview(`Could not load code preview for ${node.id}.`);
+        setSummary("Could not generate summary for this file.");
+      } finally {
+        setSummaryLoading(false);
       }
     } else {
       setCodePreview(`No direct code preview for node type: ${node.data.type}.`);
+      setSummary(null);
     }
   };
 
@@ -291,16 +314,19 @@ const HomePage: React.FC = () => {
       )}
 
       {selectedNode && codePreview && (
-        <div className="justify-start w-full max-w-4xl bg-neutral-50 p-6 rounded-lg shadow-md mt-8">
-          <h3 className="text-xl font-semibold mb-4">Code Preview for {selectedNode.data.label}</h3>
-          <SyntaxHighlighter
-            language={getLanguageFromFilename(selectedNode.data.label)}
-            style={oneDark}
-            customStyle={{ borderRadius: 8, fontSize: 14, padding: 16 }}
-            showLineNumbers
-          >
-            {codePreview}
-          </SyntaxHighlighter>
+        <div className="justify start w-full max-w-6xl flex gap-6 bg-neutral-50 p-6 rounded-lg shadow-md mt-8">
+          <div className="flex-1 min-w-0">
+            <h3 className="text-xl font-semibold mb-4">Code Preview for {selectedNode.data.label}</h3>
+            <SyntaxHighlighter
+              language={getLanguageFromFilename(selectedNode.data.label)}
+              style={oneDark}
+              customStyle={{ borderRadius: 8, fontSize: 14, padding: 16 }}
+              showLineNumbers
+            >
+              {codePreview}
+            </SyntaxHighlighter>
+          </div>
+          <CodeSummary code={codePreview} filename={selectedNode.data.label} />
         </div>
       )}
 
