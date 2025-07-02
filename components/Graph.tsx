@@ -1,7 +1,7 @@
 // components/Graph.tsx (full updated version with zoom/pan)
 "use client";
 
-import React, { useRef, useEffect, useCallback } from "react";
+import React, { useRef, useEffect, useCallback, useImperativeHandle, forwardRef } from "react";
 import * as d3 from "d3";
 import { Node, Edge } from "@/lib/parsers/babel";
 
@@ -18,18 +18,19 @@ interface GraphProps {
 interface D3Node extends d3.SimulationNodeDatum, Node {}
 interface D3Edge extends d3.SimulationLinkDatum<D3Node>, Edge {}
 
-const Graph: React.FC<GraphProps> = ({
-  graphData,
-  width,
-  height,
-  onNodeClick,
-}) => {
+const Graph = forwardRef<
+  { focusNode: (nodeId: string) => void },
+  GraphProps
+>(({ graphData, width, height, onNodeClick }, ref) => {
   const svgRef = useRef<SVGSVGElement | null>(null);
   // Removed gRef for now to simplify debugging
 
-  const simulationRef = useRef<d3.Simulation<D3Node, D3Edge>>();
+  const simulationRef = useRef<d3.Simulation<D3Node, D3Edge> | undefined>(undefined);
   // Store the current zoom transform
   const zoomTransformRef = useRef<d3.ZoomTransform | null>(null);
+  const zoomGroupRef = useRef<SVGGElement | null>(null);
+  const d3ZoomRef = useRef<d3.ZoomBehavior<SVGSVGElement, unknown> | null>(null);
+  const nodesDataRef = useRef<D3Node[]>([]);
 
   const dragstarted = useCallback(
     (event: d3.D3DragEvent<any, D3Node, any>) => {
@@ -70,14 +71,14 @@ const Graph: React.FC<GraphProps> = ({
 
     // --- Add Zoom/Pan Support ---
     const zoomGroup = svg.append("g").attr("class", "zoom-group");
-    svg.call(
-      d3.zoom<SVGSVGElement, unknown>()
-        .scaleExtent([0.2, 4])
-        .on("zoom", (event) => {
-          zoomGroup.attr("transform", event.transform);
-          zoomTransformRef.current = event.transform;
-        })
-    );
+    zoomGroupRef.current = zoomGroup.node();
+    d3ZoomRef.current = d3.zoom<SVGSVGElement, unknown>()
+      .scaleExtent([0.2, 4])
+      .on("zoom", (event) => {
+        zoomGroup.attr("transform", event.transform);
+        zoomTransformRef.current = event.transform;
+      });
+    svg.call(d3ZoomRef.current);
 
     // Ensure data is mapped correctly for D3
     const nodesData: D3Node[] = graphData.nodes.map((node) => ({
@@ -88,6 +89,7 @@ const Graph: React.FC<GraphProps> = ({
       vx: (node as any).vx ?? 0,
       vy: (node as any).vy ?? 0,
     }));
+    nodesDataRef.current = nodesData;
     const edgesData: D3Edge[] = graphData.edges.map((edge) => ({
       ...edge,
       source: edge.source,
@@ -227,6 +229,33 @@ const Graph: React.FC<GraphProps> = ({
 
   }, [graphData, width, height, dragstarted, dragged, dragended]);
 
+  // --- Imperative handle for focusing/zooming to a node ---
+  useImperativeHandle(ref, () => ({
+    focusNode: (nodeId: string) => {
+      if (!svgRef.current || !zoomGroupRef.current || !d3ZoomRef.current) return;
+      const node = nodesDataRef.current.find((n) => n.id === nodeId);
+      console.log('[Graph] focusNode called with nodeId:', nodeId);
+      if (!node) {
+        console.warn('[Graph] No node found for id:', nodeId, 'Available node ids:', nodesDataRef.current.map(n => n.id));
+        return;
+      }
+      if (typeof node.x !== "number" || typeof node.y !== "number") {
+        console.warn('[Graph] Node found but x/y not set:', nodeId, node);
+        return;
+      }
+      const svg = d3.select(svgRef.current);
+      const svgWidth = svgRef.current.width.baseVal.value;
+      const svgHeight = svgRef.current.height.baseVal.value;
+      const scale = 1.5;
+      const tx = svgWidth / 2 - node.x * scale;
+      const ty = svgHeight / 2 - node.y * scale;
+      svg.transition()
+        .duration(600)
+        .call(d3ZoomRef.current.transform, d3.zoomIdentity.translate(tx, ty).scale(scale));
+      console.log('[Graph] Focused on node:', nodeId, 'at', node.x, node.y);
+    }
+  }), []);
+
   return (
     <div
       className="relative w-full h-full"
@@ -235,6 +264,6 @@ const Graph: React.FC<GraphProps> = ({
       <svg ref={svgRef} width={width} height={height}></svg>
     </div>
   );
-};
+});
 
 export default Graph;

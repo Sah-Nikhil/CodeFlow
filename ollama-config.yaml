@@ -1,0 +1,9 @@
+# This file is used to configure the Ollama model for the application.
+# Specify the Ollama model to use; configuration of the model temperature, top_p, etc. is not supported in the application yet.
+ollama:
+  # model: deepseek-r1:8b
+  model: deepseek-coder:1.3b
+# The default model is 'deepseek-coder:1.3b'. You can change it to any other model available in your Ollama setup.
+# to check the available models, run:
+# 'ollama list'
+# in your terminal.
