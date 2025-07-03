@@ -100,26 +100,10 @@ const HomePage: React.FC = () => {
         }
         const data = await res.json();
         setCodePreview(data.content);
-
-        // Fetch summary
-        setSummaryLoading(true);
-        const summaryRes = await fetch("/api/summarize", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: data.content, filename: node.data.label }),
-        });
-        if (!summaryRes.ok) {
-          const errData = await summaryRes.json();
-          throw new Error(errData.error || "Failed to fetch summary");
-        }
-        const summaryData = await summaryRes.json();
-        setSummary(summaryData.summary);
       } catch (err) {
-        console.error("Error fetching code preview or summary:", err);
+        console.error("Error fetching code preview:", err);
         setCodePreview(`Could not load code preview for ${node.id}.`);
-        setSummary("Could not generate summary for this file.");
-      } finally {
-        setSummaryLoading(false);
+        setSummary(null);
       }
     } else {
       setCodePreview(`No direct code preview for node type: ${node.data.type}.`);
