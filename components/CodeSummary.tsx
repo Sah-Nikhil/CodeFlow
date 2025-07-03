@@ -1,4 +1,4 @@
-    import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface CodeSummaryProps {
   code: string;
@@ -11,9 +11,12 @@ const CodeSummary: React.FC<CodeSummaryProps> = ({ code, filename }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!code || !filename) {
+    console.log("useEffect triggered", { code, filename });
+    // Prevent API call if code is a loading message or empty
+    if (!code || !filename || code === "Loading code preview..." || code.startsWith("Could not load code preview")) {
       setSummary(null);
       setError(null);
+      setLoading(false);
       return;
     }
     setLoading(true);
