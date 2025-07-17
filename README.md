@@ -49,6 +49,10 @@ CodeFlow is a Next.js application that visualizes the structure and relationship
    5. Render interactive graph
               │
               ▼
+┌────────────────────────────┐
+│   AI Code Summary (LLM)    │
+└─────────────┬──────────────┘
+              │
    6. User explores, selects nodes, previews code
               │
               ▼
@@ -60,7 +64,6 @@ CodeFlow is a Next.js application that visualizes the structure and relationship
 * **Step 3:** Parsers analyze the code for structure and relationships.
 * **Step 4:** A graph is built from the parsed data.
 * **Step 5:** The graph is rendered interactively in the browser.
-
 * **Step 6:** User can click nodes to preview code and explore relationships.
 * **Step 7:** When a user selects a file or node, the app can send the code to an AI model (LLM) to generate a summary or explanation, which is then displayed in the UI.
 
